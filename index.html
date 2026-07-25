@@ -260,6 +260,13 @@
   .profile-edit-avatar img { width: 100%; height: 100%; object-fit: cover; }
   .profile-edit-avatar-hint { position: absolute; inset: 0; background: rgba(0,0,0,0.4); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; opacity: 0; transition: opacity 0.15s; }
   .profile-edit-avatar:active .profile-edit-avatar-hint { opacity: 1; }
+
+  .avatar-crop-viewport { width: 280px; height: 280px; max-width: 100%; border-radius: 50%; overflow: hidden; position: relative; margin: 4px auto 18px; background: #111; cursor: grab; touch-action: none; box-shadow: 0 0 0 3px var(--panel), 0 0 0 5px var(--line); }
+  .avatar-crop-viewport.dragging { cursor: grabbing; }
+  .avatar-crop-viewport img { position: absolute; top: 0; left: 0; transform-origin: 0 0; -webkit-user-drag: none; user-select: none; pointer-events: none; }
+  .avatar-crop-zoom-row { display: flex; align-items: center; gap: 10px; padding: 0 8px 20px; color: var(--muted); }
+  .avatar-crop-zoom-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .avatar-crop-hint-text { text-align: center; font-size: 12px; color: var(--muted); margin: -10px 0 16px; }
   .profile-field { margin-bottom: 14px; }
   .profile-field label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
   .profile-field input, .profile-field textarea { width: 100%; border: none; border-radius: 10px; padding: 11px 13px; font-family: 'Karla', sans-serif; font-size: 14.5px; background: var(--paper); color: var(--ink); outline: none; box-sizing: border-box;
@@ -1189,11 +1196,22 @@
 
   // ---------- profile ----------
   let profileDraftAvatarUrl = '';
+  let profileDraftName = '';
+  let profileDraftBio = '';
   let profileAvatarChanged = false; // true only once a NEW file has been picked in this modal session
 
   function openProfileModal() {
     profileDraftAvatarUrl = profile.avatarUrl || '';
+    profileDraftName = profile.displayName || '';
+    profileDraftBio = profile.bio || '';
     profileAvatarChanged = false;
+    renderProfileModal();
+  }
+
+  // Renders the Edit Profil modal from the current draft state. Split out from
+  // openProfileModal so returning from the crop tool can redraw this modal
+  // without wiping out whatever the person already typed in Nama/Bio.
+  function renderProfileModal() {
     let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
     html += '<div class="modal-header"><span class="modal-title">Edit Profil</span><button class="close-btn" onclick="closeModal()">' + icon('x', 18) + '</button></div>';
     html += '<div id="profile-error"></div>';
@@ -1203,8 +1221,8 @@
     html += '    <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
     html += '  </label>';
     html += '</div>';
-    html += '<div class="profile-field"><label>Nama</label><input type="text" id="profile-name" value="' + escapeHtml(profile.displayName || '') + '" placeholder="Nama anda" maxlength="60"></div>';
-    html += '<div class="profile-field"><label>Bio</label><textarea id="profile-bio" placeholder="Sikit tentang anda...">' + escapeHtml(profile.bio || '') + '</textarea></div>';
+    html += '<div class="profile-field"><label>Nama</label><input type="text" id="profile-name" value="' + escapeHtml(profileDraftName) + '" oninput="profileDraftName=this.value" placeholder="Nama anda" maxlength="60"></div>';
+    html += '<div class="profile-field"><label>Bio</label><textarea id="profile-bio" oninput="profileDraftBio=this.value" placeholder="Sikit tentang anda...">' + escapeHtml(profileDraftBio) + '</textarea></div>';
     html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Batal</button><button type="button" class="btn btn-save" id="profile-save-btn" style="flex:1;" onclick="saveProfile()">' + icon('check', 15) + 'Simpan</button></div>';
     html += '</div></div>';
     document.getElementById('modalRoot').innerHTML = html;
@@ -1214,22 +1232,183 @@
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
-    const errEl = document.getElementById('profile-error');
-    if (errEl) errEl.innerHTML = '';
+    // Keep whatever's already typed so switching to the crop tool doesn't lose it.
+    const nameInput = document.getElementById('profile-name');
+    const bioInput = document.getElementById('profile-bio');
+    if (nameInput) profileDraftName = nameInput.value;
+    if (bioInput) profileDraftBio = bioInput.value;
+
     if (!file.type.startsWith('image/')) {
+      renderProfileModal();
+      const errEl = document.getElementById('profile-error');
       if (errEl) errEl.innerHTML = '<div class="error-banner">Sila pilih fail gambar.</div>';
       return;
     }
     try {
-      profileDraftAvatarUrl = await compressImageFile(file);
-      profileAvatarChanged = true;
-      const preview = document.getElementById('profile-avatar-preview');
-      if (preview) {
-        preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
-      }
+      await openAvatarCropModal(file);
     } catch (err) {
+      renderProfileModal();
+      const errEl = document.getElementById('profile-error');
       if (errEl) errEl.innerHTML = '<div class="error-banner">Tak dapat proses gambar ini.</div>';
     }
+  }
+
+  // ---------- Avatar crop tool (drag to reposition, slider to zoom — like Twitter/Facebook) ----------
+  let avatarCropState = null;
+
+  async function openAvatarCropModal(file) {
+    let imgSrc, naturalW, naturalH, drawSource;
+
+    // Decode respecting EXIF orientation (photos from phone cameras are often
+    // stored sideways with a rotation tag) so what the person drags/zooms here
+    // matches what actually gets saved.
+    if (window.createImageBitmap) {
+      let bitmap = null;
+      try { bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch (e) { bitmap = null; }
+      if (bitmap) {
+        naturalW = bitmap.width; naturalH = bitmap.height;
+        const off = document.createElement('canvas');
+        off.width = naturalW; off.height = naturalH;
+        off.getContext('2d').drawImage(bitmap, 0, 0);
+        if (bitmap.close) bitmap.close();
+        drawSource = off;
+        imgSrc = off.toDataURL('image/png');
+      }
+    }
+    if (!drawSource) {
+      const dataUrl = await fileToDataUrl(file);
+      const preload = await new Promise((res, rej) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = rej;
+        im.src = dataUrl;
+      });
+      naturalW = preload.naturalWidth; naturalH = preload.naturalHeight;
+      drawSource = preload;
+      imgSrc = dataUrl;
+    }
+
+    const C = 280;
+    const minS = Math.max(C / naturalW, C / naturalH);
+    avatarCropState = {
+      drawSource, naturalW, naturalH, C, minS, maxS: minS * 3,
+      scale: minS,
+      tx: (C - naturalW * minS) / 2,
+      ty: (C - naturalH * minS) / 2,
+      dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0
+    };
+
+    let html = '<div class="modal-overlay" onclick="event.stopPropagation()"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">Laraskan Foto</span><button class="close-btn" onclick="cancelAvatarCrop()">' + icon('x', 18) + '</button></div>';
+    html += '<div class="avatar-crop-viewport" id="avatar-crop-viewport"><img id="avatar-crop-img" draggable="false" alt=""></div>';
+    html += '<div class="avatar-crop-hint-text">Seret untuk gerakkan &middot; gelangsar untuk zum</div>';
+    html += '<div class="avatar-crop-zoom-row">' + icon('image', 15) + '<input type="range" id="avatar-crop-zoom" min="0" max="100" value="0" oninput="avatarCropZoomChanged(this.value)"></div>';
+    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="cancelAvatarCrop()">Batal</button><button type="button" class="btn btn-save" style="flex:1;" onclick="confirmAvatarCrop()">' + icon('check', 15) + 'Guna Foto Ini</button></div>';
+    html += '</div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+
+    document.getElementById('avatar-crop-img').src = imgSrc;
+    applyAvatarCropTransform();
+
+    const viewport = document.getElementById('avatar-crop-viewport');
+    viewport.addEventListener('pointerdown', avatarCropPointerDown);
+    window.addEventListener('pointermove', avatarCropPointerMove);
+    window.addEventListener('pointerup', avatarCropPointerUp);
+    window.addEventListener('pointercancel', avatarCropPointerUp);
+  }
+
+  function teardownAvatarCropListeners() {
+    window.removeEventListener('pointermove', avatarCropPointerMove);
+    window.removeEventListener('pointerup', avatarCropPointerUp);
+    window.removeEventListener('pointercancel', avatarCropPointerUp);
+  }
+
+  function avatarCropPointerDown(e) {
+    const st = avatarCropState;
+    if (!st) return;
+    st.dragging = true;
+    st.startX = e.clientX; st.startY = e.clientY;
+    st.startTx = st.tx; st.startTy = st.ty;
+    const vp = document.getElementById('avatar-crop-viewport');
+    if (vp) vp.classList.add('dragging');
+    if (e.target.setPointerCapture) { try { e.target.setPointerCapture(e.pointerId); } catch (err) {} }
+  }
+
+  function avatarCropPointerMove(e) {
+    const st = avatarCropState;
+    if (!st || !st.dragging) return;
+    st.tx = st.startTx + (e.clientX - st.startX);
+    st.ty = st.startTy + (e.clientY - st.startY);
+    clampAvatarCropPosition();
+    applyAvatarCropTransform();
+  }
+
+  function avatarCropPointerUp() {
+    const st = avatarCropState;
+    if (!st) return;
+    st.dragging = false;
+    const vp = document.getElementById('avatar-crop-viewport');
+    if (vp) vp.classList.remove('dragging');
+  }
+
+  function avatarCropZoomChanged(sliderValue) {
+    const st = avatarCropState;
+    if (!st) return;
+    const t = parseFloat(sliderValue) / 100;
+    const newScale = st.minS + t * (st.maxS - st.minS);
+    // Anchor on the point currently at the centre of the viewport so zooming
+    // feels like it's zooming "into" what's shown, not jumping around.
+    const cx = (st.C / 2 - st.tx) / st.scale;
+    const cy = (st.C / 2 - st.ty) / st.scale;
+    st.scale = newScale;
+    st.tx = st.C / 2 - cx * st.scale;
+    st.ty = st.C / 2 - cy * st.scale;
+    clampAvatarCropPosition();
+    applyAvatarCropTransform();
+  }
+
+  function clampAvatarCropPosition() {
+    const st = avatarCropState;
+    if (!st) return;
+    const dispW = st.naturalW * st.scale;
+    const dispH = st.naturalH * st.scale;
+    const minTx = Math.min(0, st.C - dispW);
+    const minTy = Math.min(0, st.C - dispH);
+    st.tx = Math.max(minTx, Math.min(0, st.tx));
+    st.ty = Math.max(minTy, Math.min(0, st.ty));
+  }
+
+  function applyAvatarCropTransform() {
+    const st = avatarCropState;
+    const img = document.getElementById('avatar-crop-img');
+    if (!st || !img) return;
+    img.style.width = (st.naturalW * st.scale) + 'px';
+    img.style.height = (st.naturalH * st.scale) + 'px';
+    img.style.transform = 'translate(' + st.tx + 'px,' + st.ty + 'px)';
+  }
+
+  function cancelAvatarCrop() {
+    teardownAvatarCropListeners();
+    avatarCropState = null;
+    renderProfileModal();
+  }
+
+  function confirmAvatarCrop() {
+    const st = avatarCropState;
+    if (!st) return;
+    const outSize = 480;
+    const srcX = -st.tx / st.scale;
+    const srcY = -st.ty / st.scale;
+    const srcW = st.C / st.scale;
+    const srcH = st.C / st.scale;
+    const canvas = document.createElement('canvas');
+    canvas.width = outSize; canvas.height = outSize;
+    canvas.getContext('2d').drawImage(st.drawSource, srcX, srcY, srcW, srcH, 0, 0, outSize, outSize);
+    profileDraftAvatarUrl = canvas.toDataURL('image/jpeg', 0.85);
+    profileAvatarChanged = true;
+    teardownAvatarCropListeners();
+    avatarCropState = null;
+    renderProfileModal();
   }
 
   // Uploads the compressed avatar (a data: URL) to the Supabase Storage 'avatars'
