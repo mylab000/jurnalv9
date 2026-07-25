@@ -55,6 +55,46 @@
     --shadow-l-rgb: 90,68,70;
   }
 
+  /* ---------- Colour themes (data-theme attribute on <body>) ---------- */
+  body[data-theme="ungu"] {
+    --bg-outer: #F1EAF7; --paper: #FAF6FD; --panel: #E5D7F0; --ink: #362A42;
+    --muted: #93839F; --border: #DCC9EA; --accent: #9B72C4; --accent-text: #FAF6FD;
+    --coral: #B08FD4; --coral-text: #2E2140; --spend: #C97462; --spend-text: #7A3326;
+    --shadow-d-rgb: 140,120,168; --shadow-l-rgb: 255,255,255;
+  }
+  body[data-theme="ungu"].dark {
+    --bg-outer: #1E1826; --paper: #271F30; --panel: #322639; --ink: #EDE3F5;
+    --muted: #B7A3C4; --border: #453551; --accent: #B491DB; --accent-text: #211530;
+    --coral: #C4A6E0; --coral-text: #211530; --spend: #E0958A; --spend-text: #F6C0B5;
+    --shadow-d-rgb: 8,6,12; --shadow-l-rgb: 78,62,90;
+  }
+
+  body[data-theme="biru"] {
+    --bg-outer: #E9EFF7; --paper: #F5F8FC; --panel: #D9E3F2; --ink: #24344A;
+    --muted: #7C8CA3; --border: #C7D6EA; --accent: #5E85C7; --accent-text: #F5F8FC;
+    --coral: #7FA0D6; --coral-text: #1E2E48; --spend: #C97462; --spend-text: #7A3326;
+    --shadow-d-rgb: 110,132,164; --shadow-l-rgb: 255,255,255;
+  }
+  body[data-theme="biru"].dark {
+    --bg-outer: #151C28; --paper: #1C2432; --panel: #24304390; --ink: #E4EBF6;
+    --muted: #9FB0C7; --border: #34445C; --accent: #7DA0DE; --accent-text: #16202E;
+    --coral: #96B4E3; --coral-text: #16202E; --spend: #E0958A; --spend-text: #F6C0B5;
+    --shadow-d-rgb: 5,7,12; --shadow-l-rgb: 58,72,92;
+  }
+
+  body[data-theme="hijau"] {
+    --bg-outer: #EAF2EA; --paper: #F5FAF5; --panel: #DBEBDC; --ink: #263A2A;
+    --muted: #7E9483; --border: #C8E0CA; --accent: #5F9E6E; --accent-text: #F5FAF5;
+    --coral: #7FBB8B; --coral-text: #1F3524; --spend: #C97462; --spend-text: #7A3326;
+    --shadow-d-rgb: 110,150,120; --shadow-l-rgb: 255,255,255;
+  }
+  body[data-theme="hijau"].dark {
+    --bg-outer: #151F17; --paper: #1C271E; --panel: #253328; --ink: #E2EFE3;
+    --muted: #9FBBA4; --border: #354A38; --accent: #7EC58E; --accent-text: #142016;
+    --coral: #9BD1A6; --coral-text: #142016; --spend: #E0958A; --spend-text: #F6C0B5;
+    --shadow-d-rgb: 5,10,6; --shadow-l-rgb: 60,80,64;
+  }
+
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; height: 100%; overscroll-behavior: none; }
   body {
@@ -171,6 +211,71 @@
   .entry-media-badge { display: flex; color: var(--muted); }
   .entry-card svg:last-child { color: var(--muted); flex-shrink: 0; }
 
+  /* ---------- Feed (Twitter/Threads style) ---------- */
+  .composer-card { display: flex; gap: 12px; background: var(--panel); border-radius: 14px; padding: 16px; margin-bottom: 18px;
+    box-shadow: 6px 6px 16px rgba(var(--shadow-d-rgb),0.22), -6px -6px 16px rgba(var(--shadow-l-rgb),0.65); }
+  .composer-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; background: var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent-text); font-weight: 700; font-size: 16px; overflow: hidden; cursor: pointer; }
+  .composer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .composer-body { flex: 1; min-width: 0; }
+  .composer-textarea { width: 100%; min-height: 60px; border: none; padding: 6px 0; font-family: 'AR CENA', 'Handlee', cursive; font-size: 18px; font-weight: 400; line-height: 1.6; background: transparent; color: var(--ink); resize: none; outline: none; }
+  .composer-textarea::placeholder { color: var(--muted); font-style: italic; }
+  .composer-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; gap: 10px; flex-wrap: wrap; }
+  .composer-footer-left { display: flex; align-items: center; gap: 8px; }
+  .composer-mood-btn { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--ink); cursor: pointer; padding: 0; flex-shrink: 0; }
+  .composer-media-btn { width: 30px; height: 30px; border-radius: 8px; border: none; background: var(--paper); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  .feed-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
+
+  .feed-post { display: flex; gap: 12px; padding: 14px 4px; border-bottom: 1px solid rgba(0,0,0,0.06); cursor: pointer; }
+  body.dark .feed-post { border-bottom-color: rgba(255,255,255,0.06); }
+  .feed-post:active { background: rgba(0,0,0,0.02); }
+  .feed-avatar { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent-text); font-weight: 700; font-size: 15px; overflow: hidden; }
+  .feed-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .feed-post-body { flex: 1; min-width: 0; }
+  .feed-post-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13.5px; }
+  .feed-post-name { font-weight: 700; color: var(--ink); }
+  .feed-post-dot { color: var(--muted); }
+  .feed-post-date { color: var(--muted); }
+  .feed-post-mood { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-left: auto; }
+  .feed-post-text { font-family: 'AR CENA', 'Handlee', cursive; font-size: 17px; line-height: 1.6; color: var(--ink); margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+  .feed-post-media { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .feed-post-media img, .feed-post-media video { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; }
+
+  /* ---------- Pull to refresh ---------- */
+  .ptr-indicator { display: flex; align-items: center; justify-content: center; height: 0; overflow: hidden; color: var(--muted); transition: height 0.15s; }
+  .ptr-indicator.visible { height: 50px; }
+  .ptr-spinner { width: 20px; height: 20px; border: 2.5px solid rgba(0,0,0,0.15); border-top-color: var(--accent); border-radius: 50%; }
+  .ptr-spinner.spinning { animation: ptr-spin 0.7s linear infinite; }
+  @keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Profile ---------- */
+  .profile-card { display: flex; align-items: center; gap: 12px; background: var(--panel); border-radius: 14px; padding: 16px; margin-bottom: 18px; cursor: pointer;
+    box-shadow: 6px 6px 16px rgba(var(--shadow-d-rgb),0.22), -6px -6px 16px rgba(var(--shadow-l-rgb),0.65); }
+  .profile-card-avatar { width: 54px; height: 54px; border-radius: 50%; flex-shrink: 0; background: var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent-text); font-weight: 700; font-size: 20px; overflow: hidden; }
+  .profile-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-card-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 17px; color: var(--ink); }
+  .profile-card-bio { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .profile-edit-avatar-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+  .profile-edit-avatar { width: 84px; height: 84px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent-text); font-weight: 700; font-size: 28px; overflow: hidden; cursor: pointer; position: relative; }
+  .profile-edit-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .profile-edit-avatar-hint { position: absolute; inset: 0; background: rgba(0,0,0,0.4); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; opacity: 0; transition: opacity 0.15s; }
+  .profile-edit-avatar:active .profile-edit-avatar-hint { opacity: 1; }
+  .profile-field { margin-bottom: 14px; }
+  .profile-field label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .profile-field input, .profile-field textarea { width: 100%; border: none; border-radius: 10px; padding: 11px 13px; font-family: 'Karla', sans-serif; font-size: 14.5px; background: var(--paper); color: var(--ink); outline: none; box-sizing: border-box;
+    box-shadow: inset 2px 2px 5px rgba(var(--shadow-d-rgb),0.18), inset -2px -2px 4px rgba(var(--shadow-l-rgb),0.6); }
+  .profile-field textarea { resize: vertical; min-height: 70px; font-family: 'Karla', sans-serif; }
+
+  /* ---------- Theme colour picker ---------- */
+  .theme-dropdown-wrap { position: relative; }
+  .theme-dropdown-panel { position: absolute; top: calc(100% + 6px); right: 0; z-index: 30; background: var(--paper); border-radius: 14px; padding: 10px; width: 210px;
+    box-shadow: 8px 8px 18px rgba(var(--shadow-d-rgb),0.32), -6px -6px 14px rgba(var(--shadow-l-rgb),0.6); }
+  .theme-panel-label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; padding: 0 2px; }
+  .theme-swatch-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .theme-swatch { width: 40px; height: 40px; border-radius: 50%; border: 2.5px solid transparent; cursor: pointer; padding: 0; position: relative; flex-shrink: 0; }
+  .theme-swatch.active { border-color: var(--ink); }
+  .theme-swatch.active::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid var(--ink); }
+
   .media-section { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
   .media-thumb-wrap { position: relative; width: 64px; height: 64px; border-radius: 10px; overflow: hidden;
     box-shadow: 3px 3px 7px rgba(var(--shadow-d-rgb),0.24), -3px -3px 7px rgba(var(--shadow-l-rgb),0.7); }
@@ -205,9 +310,18 @@
   const SUPABASE_URL = 'https://zdtmljxdmllbdzjdwrwa.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdG1sanhkbWxsYmR6amR3cndhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ5Mzk4MTcsImV4cCI6MjEwMDUxNTgxN30.JKNy0pX8wBdrr3Oud_ydr3IXnM5yjSJpOfKz9FxFIC0';
   // =============================================================
-  const supabaseClient = (SUPABASE_URL.startsWith('http'))
-    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
+  let supabaseClient = null;
+  let supabaseLoadError = false;
+  try {
+    if (SUPABASE_URL.startsWith('http') && typeof supabase !== 'undefined' && supabase.createClient) {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else if (SUPABASE_URL.startsWith('http')) {
+      // URL/key are configured but the CDN script itself failed to load (network issue, ad-blocker, etc.)
+      supabaseLoadError = true;
+    }
+  } catch (e) {
+    supabaseLoadError = true;
+  }
 </script>
 </head>
 <body>
@@ -226,10 +340,14 @@
         <div class="sync-badge" id="sync-badge" title="Status segerak"></div>
         <div class="streak-badge" id="streak-badge"></div>
         <button class="icon-toggle-btn" id="backup-btn" onclick="openBackupModal()"></button>
+        <div class="theme-dropdown-wrap" id="theme-dropdown-wrap">
+          <button class="icon-toggle-btn" id="theme-toggle-btn" onclick="toggleThemeDropdown(event)" title="Warna tema"></button>
+        </div>
         <button class="icon-toggle-btn" id="dark-toggle" onclick="toggleDarkMode()"></button>
         <button class="icon-toggle-btn" id="logout-btn" onclick="handleLogout()" title="Log keluar"></button>
       </div>
     </div>
+    <div class="ptr-indicator" id="ptr-indicator"><div class="ptr-spinner" id="ptr-spinner"></div></div>
     <div class="body-scroll" id="bodyRoot"></div>
   </div>
 </div>
@@ -254,6 +372,7 @@
     video: '<rect x="2" y="5" width="15" height="14" rx="2"/><path d="M17 10l5-3v10l-5-3"/>',
     plus: '<path d="M12 5v14M5 12h14"/>',
     'log-out': '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>',
+    palette: '<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 22a10 10 0 1 1 8-16 5 5 0 0 1-5 5h-1a2 2 0 0 0-2 2 3 3 0 0 1-3 3c-1 0 1 3-1 3-2 0 4 3 4 3z"/>',
     playCircle: '<circle cx="12" cy="12" r="9"/><path d="M10 8.3l6.5 3.7-6.5 3.7V8.3z" fill="currentColor" stroke="none"/>',
     loader: '<circle cx="12" cy="12" r="9" stroke-dasharray="34 20" stroke-linecap="round"/>',
   };
@@ -390,6 +509,34 @@
     await supabaseClient.from('journal_drafts').delete().eq('user_id', currentUser.id).eq('draft_key', key);
   }
 
+  async function cloudLoadProfile() {
+    if (!supabaseClient || !currentUser) return { displayName: '', bio: '', avatarUrl: '' };
+    const { data, error } = await supabaseClient.from('profiles').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (error || !data) return { displayName: '', bio: '', avatarUrl: '' };
+    return { displayName: data.display_name || '', bio: data.bio || '', avatarUrl: data.avatar_url || '' };
+  }
+
+  async function cloudSaveProfile(p) {
+    if (!supabaseClient || !currentUser) return false;
+    const { error } = await supabaseClient.from('profiles').upsert({
+      user_id: currentUser.id,
+      display_name: p.displayName,
+      bio: p.bio,
+      avatar_url: p.avatarUrl,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    if (error) { console.error('Gagal simpan profil', error); return false; }
+    return true;
+  }
+
+  async function cloudLoadSettings() {
+    const fallback = { darkMode: false, colorTheme: 'default' };
+    if (!supabaseClient || !currentUser) return fallback;
+    const { data, error } = await supabaseClient.from('journal_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
+    if (error || !data) return fallback;
+    return { darkMode: !!data.dark_mode, colorTheme: data.color_theme || 'default' };
+  }
+
   // ---------- state ----------
   let state = { loaded: false, entries: [], darkMode: false };
   let currentMood = 'Biasa';
@@ -398,6 +545,7 @@
   let todayStatusMessage = '';
   let selectedEntryDate = todayStr();
   let syncStatus = 'local'; // 'local' | 'synced' | 'syncing' | 'error'
+  let profile = { displayName: '', bio: '', avatarUrl: '' };
 
   async function loadData() {
     if (currentUser) {
@@ -406,16 +554,25 @@
       if (cloudEntries !== null) {
         state.entries = cloudEntries;
         textDrafts = await cloudLoadDrafts();
+        profile = await cloudLoadProfile();
+        const cloudSettings = await cloudLoadSettings();
+        state.darkMode = cloudSettings.darkMode;
+        state.colorTheme = cloudSettings.colorTheme;
         syncStatus = 'synced';
       } else {
         syncStatus = 'error';
       }
     } else {
       try {
-        const [e, s, d] = await Promise.allSettled([storageGet('entries'), storageGet('settings'), storageGet('drafts')]);
+        const [e, s, d, p] = await Promise.allSettled([storageGet('entries'), storageGet('settings'), storageGet('drafts'), storageGet('profile')]);
         if (e.status === 'fulfilled' && e.value) state.entries = JSON.parse(e.value.value);
-        if (s.status === 'fulfilled' && s.value) state.darkMode = !!JSON.parse(s.value.value).darkMode;
+        if (s.status === 'fulfilled' && s.value) {
+          const settingsObj = JSON.parse(s.value.value);
+          state.darkMode = !!settingsObj.darkMode;
+          state.colorTheme = settingsObj.colorTheme || 'default';
+        }
         if (d.status === 'fulfilled' && d.value) textDrafts = JSON.parse(d.value.value) || {};
+        if (p.status === 'fulfilled' && p.value) profile = JSON.parse(p.value.value);
       } catch (err) { /* no data yet */ }
       syncStatus = 'local';
     }
@@ -428,26 +585,75 @@
     catch (e) { console.error('Gagal simpan jurnal', e); }
   }
   async function persistSettings() {
-    try { await storageSet('settings', JSON.stringify({ darkMode: state.darkMode })); }
+    try { await storageSet('settings', JSON.stringify({ darkMode: state.darkMode, colorTheme: state.colorTheme || 'default' })); }
     catch (e) { console.error('Gagal simpan tetapan', e); }
     if (currentUser && supabaseClient) {
       try {
         await supabaseClient.from('journal_settings').upsert({
-          user_id: currentUser.id, dark_mode: state.darkMode, updated_at: new Date().toISOString()
+          user_id: currentUser.id, dark_mode: state.darkMode, color_theme: state.colorTheme || 'default', updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' });
       } catch (e) { console.error('Gagal simpan tetapan ke cloud', e); }
     }
   }
+
+  // ---------- theme colours ----------
+  const COLOR_THEMES = [
+    { key: 'default', label: 'Koral', swatchLight: '#C97B84', swatchDark: '#DE95A0' },
+    { key: 'ungu', label: 'Ungu', swatchLight: '#9B72C4', swatchDark: '#B491DB' },
+    { key: 'biru', label: 'Biru', swatchLight: '#5E85C7', swatchDark: '#7DA0DE' },
+    { key: 'hijau', label: 'Hijau', swatchLight: '#5F9E6E', swatchDark: '#7EC58E' }
+  ];
+  let themeDropdownOpen = false;
 
   function toggleDarkMode() {
     state.darkMode = !state.darkMode;
     applyTheme();
     persistSettings();
   }
+  function toggleThemeDropdown(e) {
+    if (e) e.stopPropagation();
+    themeDropdownOpen = !themeDropdownOpen;
+    renderThemeDropdown();
+  }
+  function renderThemeDropdown() {
+    const wrap = document.getElementById('theme-dropdown-wrap');
+    if (!wrap) return;
+    const existing = wrap.querySelector('.theme-dropdown-panel');
+    if (existing) existing.remove();
+    if (!themeDropdownOpen) return;
+    const panel = document.createElement('div');
+    panel.className = 'theme-dropdown-panel';
+    panel.onclick = function (ev) { ev.stopPropagation(); };
+    let html = '<div class="theme-panel-label">Warna Tema</div><div class="theme-swatch-row">';
+    COLOR_THEMES.forEach(t => {
+      const active = (state.colorTheme || 'default') === t.key;
+      const swatch = state.darkMode ? t.swatchDark : t.swatchLight;
+      html += '<button type="button" class="theme-swatch' + (active ? ' active' : '') + '" style="background:' + swatch + ';" title="' + t.label + '" onclick="setColorTheme(\'' + t.key + '\')"></button>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+    wrap.appendChild(panel);
+  }
+  function setColorTheme(key) {
+    state.colorTheme = key;
+    applyTheme();
+    persistSettings();
+    themeDropdownOpen = false;
+    renderThemeDropdown();
+  }
   function applyTheme() {
     document.body.classList.toggle('dark', state.darkMode);
+    if (state.colorTheme && state.colorTheme !== 'default') {
+      document.body.setAttribute('data-theme', state.colorTheme);
+    } else {
+      document.body.removeAttribute('data-theme');
+    }
     document.getElementById('dark-toggle').innerHTML = icon(state.darkMode ? 'sun' : 'moon', 16);
-    document.getElementById('theme-color-meta').setAttribute('content', state.darkMode ? '#241A1B' : '#F7E9E9');
+    const themeBtn = document.getElementById('theme-toggle-btn');
+    if (themeBtn) themeBtn.innerHTML = icon('palette', 16);
+    // Read the actual resolved --bg-outer so the browser chrome colour always matches the active theme.
+    const resolvedBg = getComputedStyle(document.body).getPropertyValue('--bg-outer').trim();
+    document.getElementById('theme-color-meta').setAttribute('content', resolvedBg || (state.darkMode ? '#241A1B' : '#F7E9E9'));
   }
 
   function computeStreak() {
@@ -499,27 +705,44 @@
     mediaDrafts.today = entryForDate && Array.isArray(entryForDate.media) ? entryForDate.media.slice() : [];
 
     let html = '';
-    html += '<div class="today-card">';
-    html += '  <div class="control-row">';
-    html += '    <div class="date-picker-wrap">';
-    html += '      <button type="button" class="date-picker-btn" onclick="toggleCalendar(event)">' + icon('calendar', 14) + formatShortDate(entryDate) + '</button>';
-    if (calendarOpen) html += renderCalendarPanel();
-    html += '    </div>';
-    html += '    <div class="mood-dropdown-wrap" id="mood-dropdown-wrap">';
-    html += '      <button type="button" class="mood-trigger-btn" id="mood-trigger-btn" style="background:' + moodColor(currentMood) + ';" title="' + currentMood + '" aria-label="Mood: ' + currentMood + '" onclick="toggleMoodDropdown(event)"></button>';
-    html += '    </div>';
+
+    // ---------- profile card ----------
+    html += '<div class="profile-card" onclick="openProfileModal()">';
+    html += '  <div class="profile-card-avatar">' + avatarHtml(profile.avatarUrl, profile.displayName, 20) + '</div>';
+    html += '  <div>';
+    html += '    <div class="profile-card-name">' + escapeHtml(profile.displayName || 'Nama anda') + '</div>';
+    if (profile.bio) html += '    <div class="profile-card-bio">' + escapeHtml(profile.bio) + '</div>';
     html += '  </div>';
-    if (entryDate !== today) html += '<button type="button" class="today-jump-link" onclick="changeEntryDate(\'' + today + '\')">Kembali ke hari ini</button>';
-    html += '  <textarea class="journal-textarea" id="today-text" placeholder="Apa yang berlaku pada hari ini? Bagaimana perasaan anda?" oninput="onTodayTextInput(this.value)">' + escapeHtml(entryText) + '</textarea>';
-    html += renderMediaSection(mediaDrafts.today, 'today');
-    html += '  <div id="today-error"></div>';
-    html += '  <div class="save-row"><span class="save-status" id="today-status">' + escapeHtml(todayStatusMessage) + '</span><button class="btn btn-save" onclick="saveTodayEntry()">' + icon('check', 15) + (entryForDate ? 'Kemas kini' : 'Simpan') + '</button></div>';
     html += '</div>';
 
-    const pastEntries = state.entries.filter(e => e.date !== entryDate).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    html += '<div class="section-heading">Sejarah jurnal</div>';
-    html += '<input class="search-input" id="search-input" type="text" placeholder="Cari dalam jurnal lama..." oninput="renderHistoryList()">';
-    html += '<div id="history-list">' + buildHistoryListHtml(pastEntries, '') + '</div>';
+    // ---------- composer ----------
+    html += '<div class="composer-card">';
+    html += '  <div class="composer-avatar" onclick="event.stopPropagation(); openProfileModal();">' + avatarHtml(profile.avatarUrl, profile.displayName, 16) + '</div>';
+    html += '  <div class="composer-body">';
+    if (entryDate !== today) {
+      html += '    <button type="button" class="today-jump-link" onclick="changeEntryDate(\'' + today + '\')">' + icon('chevronLeft', 12) + ' Kembali ke hari ini (edit ' + formatShortDate(entryDate) + ')</button>';
+    }
+    html += '    <textarea class="composer-textarea" id="today-text" placeholder="Apa yang berlaku hari ini?" oninput="onTodayTextInput(this.value)">' + escapeHtml(entryText) + '</textarea>';
+    html += renderMediaSection(mediaDrafts.today, 'today');
+    html += '    <div id="today-error"></div>';
+    html += '    <div class="composer-footer">';
+    html += '      <div class="composer-footer-left">';
+    html += '        <div class="mood-dropdown-wrap" id="mood-dropdown-wrap"><button type="button" class="composer-mood-btn" id="mood-trigger-btn" style="background:' + moodColor(currentMood) + ';" title="' + currentMood + '" aria-label="Mood: ' + currentMood + '" onclick="toggleMoodDropdown(event)"></button></div>';
+    html += '        <div class="date-picker-wrap"><button type="button" class="composer-media-btn" onclick="toggleCalendar(event)" title="Tukar tarikh">' + icon('calendar', 14) + '</button>';
+    if (calendarOpen) html += renderCalendarPanel();
+    html += '        </div>';
+    html += '        <span class="save-status" id="today-status">' + escapeHtml(todayStatusMessage) + '</span>';
+    html += '      </div>';
+    html += '      <button class="btn btn-save" onclick="saveTodayEntry()">' + icon('check', 15) + (entryForDate ? 'Kemas kini' : 'Post') + '</button>';
+    html += '    </div>';
+    html += '  </div>';
+    html += '</div>';
+
+    // ---------- feed ----------
+    html += '<div class="feed-heading"><span class="section-heading" style="margin-bottom:0;">Jurnal anda</span></div>';
+    html += '<input class="search-input" id="search-input" type="text" placeholder="Cari dalam jurnal..." oninput="renderHistoryList()">';
+    const allEntries = state.entries.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    html += '<div id="history-list">' + buildFeedHtml(allEntries, '') + '</div>';
     return html;
   }
 
@@ -603,6 +826,10 @@
     if (!e.target.closest('.mood-dropdown-wrap')) {
       document.querySelectorAll('.mood-dropdown-panel').forEach(p => p.remove());
     }
+    if (themeDropdownOpen && !e.target.closest('.theme-dropdown-wrap')) {
+      themeDropdownOpen = false;
+      renderThemeDropdown();
+    }
   });
 
   function formatMediumDate(dateStr) {
@@ -610,30 +837,49 @@
     return d.toLocaleDateString('ms-MY', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  function buildHistoryListHtml(entries, query) {
+  function avatarHtml(url, name, fontSize) {
+    if (url) return '<img src="' + url.replace(/"/g, '&quot;') + '" alt="">';
+    const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+    return '<span style="font-size:' + fontSize + 'px;">' + escapeHtml(initial) + '</span>';
+  }
+
+  function buildFeedHtml(entries, query) {
     const q = (query || '').toLowerCase().trim();
     const filtered = q ? entries.filter(e => e.text.toLowerCase().includes(q) || e.mood.toLowerCase().includes(q)) : entries;
     if (filtered.length === 0) {
-      return '<div class="empty-state"><div class="empty-title">' + (entries.length === 0 ? 'Belum ada jurnal lama' : 'Tiada padanan carian') + '</div><div class="empty-sub">' + (entries.length === 0 ? 'Mula tulis jurnal hari ini di atas.' : 'Cuba kata kunci lain.') + '</div></div>';
+      return '<div class="empty-state"><div class="empty-title">' + (entries.length === 0 ? 'Belum ada jurnal lagi' : 'Tiada padanan carian') + '</div><div class="empty-sub">' + (entries.length === 0 ? 'Mula tulis di atas.' : 'Cuba kata kunci lain.') + '</div></div>';
     }
     let html = '';
     filtered.forEach(e => {
       const hasMedia = Array.isArray(e.media) && e.media.length > 0;
-      html += '<button type="button" class="entry-card" onclick="openEntryModal(\'' + e.id + '\')">';
-      html += '<div class="mood-dot" style="background:' + moodColor(e.mood) + ';"></div>';
-      html += '<span class="entry-card-label">Entri ' + formatMediumDate(e.date) + '</span>';
-      if (hasMedia) html += '<span class="entry-media-badge">' + icon('image', 13) + '</span>';
-      html += icon('chevronRight', 15);
-      html += '</button>';
+      html += '<div class="feed-post" onclick="openEntryModal(\'' + e.id + '\')">';
+      html += '  <div class="feed-avatar">' + avatarHtml(profile.avatarUrl, profile.displayName, 15) + '</div>';
+      html += '  <div class="feed-post-body">';
+      html += '    <div class="feed-post-head">';
+      html += '      <span class="feed-post-name">' + escapeHtml(profile.displayName || 'Anda') + '</span>';
+      html += '      <span class="feed-post-dot">&middot;</span>';
+      html += '      <span class="feed-post-date">' + formatMediumDate(e.date) + '</span>';
+      html += '      <span class="feed-post-mood" style="background:' + moodColor(e.mood) + ';" title="' + escapeHtml(e.mood) + '"></span>';
+      html += '    </div>';
+      html += '    <div class="feed-post-text">' + escapeHtml(e.text) + '</div>';
+      if (hasMedia) {
+        html += '    <div class="feed-post-media">';
+        e.media.slice(0, 4).forEach(m => {
+          if (m && m.type === 'video') html += '<video src="' + m.dataUrl + '" muted></video>';
+          else html += '<img src="' + (m.dataUrl || '') + '" alt="">';
+        });
+        html += '    </div>';
+      }
+      html += '  </div>';
+      html += '</div>';
     });
     return html;
   }
 
   function renderHistoryList() {
-    const today = todayStr();
-    const pastEntries = state.entries.filter(e => e.date !== today).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const allEntries = state.entries.slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     const query = document.getElementById('search-input').value;
-    document.getElementById('history-list').innerHTML = buildHistoryListHtml(pastEntries, query);
+    document.getElementById('history-list').innerHTML = buildFeedHtml(allEntries, query);
   }
 
   function renderMoodOptionsHtml(activeKey, pickFnName) {
@@ -913,6 +1159,58 @@
     document.getElementById('modalRoot').innerHTML = '';
   }
 
+  // ---------- profile ----------
+  let profileDraftAvatarUrl = '';
+
+  function openProfileModal() {
+    profileDraftAvatarUrl = profile.avatarUrl || '';
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">Edit Profil</span><button class="close-btn" onclick="closeModal()">' + icon('x', 18) + '</button></div>';
+    html += '<div id="profile-error"></div>';
+    html += '<div class="profile-edit-avatar-wrap">';
+    html += '  <label class="profile-edit-avatar" id="profile-avatar-preview">' + avatarHtml(profileDraftAvatarUrl, profile.displayName, 28);
+    html += '    <span class="profile-edit-avatar-hint">Tukar foto</span>';
+    html += '    <input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
+    html += '  </label>';
+    html += '</div>';
+    html += '<div class="profile-field"><label>Nama</label><input type="text" id="profile-name" value="' + escapeHtml(profile.displayName || '') + '" placeholder="Nama anda" maxlength="60"></div>';
+    html += '<div class="profile-field"><label>Bio</label><textarea id="profile-bio" placeholder="Sikit tentang anda...">' + escapeHtml(profile.bio || '') + '</textarea></div>';
+    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Batal</button><button type="button" class="btn btn-save" style="flex:1;" onclick="saveProfile()">' + icon('check', 15) + 'Simpan</button></div>';
+    html += '</div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+  }
+
+  async function handleAvatarFile(e) {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const errEl = document.getElementById('profile-error');
+    if (errEl) errEl.innerHTML = '';
+    if (!file.type.startsWith('image/')) {
+      if (errEl) errEl.innerHTML = '<div class="error-banner">Sila pilih fail gambar.</div>';
+      return;
+    }
+    try {
+      profileDraftAvatarUrl = await compressImageFile(file);
+      const preview = document.getElementById('profile-avatar-preview');
+      if (preview) {
+        preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
+      }
+    } catch (err) {
+      if (errEl) errEl.innerHTML = '<div class="error-banner">Tak dapat proses gambar ini.</div>';
+    }
+  }
+
+  async function saveProfile() {
+    const name = (document.getElementById('profile-name').value || '').trim();
+    const bio = (document.getElementById('profile-bio').value || '').trim();
+    profile = { displayName: name, bio: bio, avatarUrl: profileDraftAvatarUrl };
+    try { await storageSet('profile', JSON.stringify(profile)); } catch (e) {}
+    if (currentUser) await cloudSaveProfile(profile);
+    closeModal();
+    render();
+  }
+
   // ---------- BACKUP / RESTORE ----------
   function openBackupModal() {
     let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
@@ -992,7 +1290,9 @@
     let html = '<div class="auth-page"><div class="auth-card">';
     html += '<div class="auth-title">Detik</div>';
     html += '<div class="auth-sub">tulis, simpan, kenang semula \u2014 di mana-mana peranti</div>';
-    if (!configured) {
+    if (!configured && typeof supabaseLoadError !== 'undefined' && supabaseLoadError) {
+      html += '<div class="auth-note">Tak dapat sambung ke perkhidmatan cloud buat masa ini \u2014 mungkin sambungan internet terputus, atau pemesong iklan menyekat cdn.jsdelivr.net. Sila semak sambungan dan cuba muat semula halaman. Jurnal masih boleh digunakan di peranti ini sahaja buat sementara.</div>';
+    } else if (!configured) {
       html += '<div class="auth-note">Sambungan cloud belum disediakan lagi. Jurnal masih boleh digunakan di peranti ini sahaja sehingga SUPABASE_URL dan SUPABASE_ANON_KEY diisi dalam kod.</div>';
     }
     if (errorMsg) html += '<div class="auth-error">' + escapeHtml(errorMsg) + '</div>';
@@ -1055,6 +1355,60 @@
     document.getElementById('authRoot').style.display = 'none';
     document.getElementById('mainPage').style.display = '';
     loadData();
+    initPullToRefresh();
+  }
+
+  // ---------- pull to refresh ----------
+  let ptrBound = false;
+  function initPullToRefresh() {
+    if (ptrBound) return; // only attach listeners once
+    ptrBound = true;
+    const scrollEl = document.getElementById('bodyRoot');
+    const indicator = document.getElementById('ptr-indicator');
+    const spinner = document.getElementById('ptr-spinner');
+    let startY = 0;
+    let pulling = false;
+    let triggered = false;
+    const THRESHOLD = 70;
+
+    scrollEl.addEventListener('touchstart', function (e) {
+      if (scrollEl.scrollTop <= 0) {
+        startY = e.touches[0].clientY;
+        pulling = true;
+        triggered = false;
+      } else {
+        pulling = false;
+      }
+    }, { passive: true });
+
+    scrollEl.addEventListener('touchmove', function (e) {
+      if (!pulling) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 0 && scrollEl.scrollTop <= 0) {
+        const capped = Math.min(dy, 90);
+        indicator.classList.add('visible');
+        indicator.style.height = capped + 'px';
+        spinner.classList.toggle('spinning', capped >= THRESHOLD);
+        triggered = capped >= THRESHOLD;
+      }
+    }, { passive: true });
+
+    scrollEl.addEventListener('touchend', function () {
+      if (!pulling) return;
+      pulling = false;
+      if (triggered) {
+        spinner.classList.add('spinning');
+        indicator.style.height = '50px';
+        loadData().then(function () {
+          indicator.classList.remove('visible');
+          indicator.style.height = '0px';
+          spinner.classList.remove('spinning');
+        });
+      } else {
+        indicator.classList.remove('visible');
+        indicator.style.height = '0px';
+      }
+    });
   }
 
   function handleLogout() {
