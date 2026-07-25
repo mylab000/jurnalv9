@@ -300,17 +300,6 @@
   .btn-cancel { flex: 1; background: transparent; border: 1px solid var(--border); border-radius: 9px; padding: 11px 8px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; }
   .btn-danger { background: var(--spend); color: #fff; }
 
-  .crop-stage { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1; margin: 0 auto 18px; border-radius: 14px; overflow: hidden; background: #1a1a1a; touch-action: none; cursor: grab; }
-  .crop-stage.dragging { cursor: grabbing; }
-  .crop-stage canvas { display: block; width: 100%; height: 100%; }
-  .crop-stage-hint { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); pointer-events: none; margin: auto; width: 100%; height: 100%; }
-  .crop-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-  .crop-controls label { font-size: 12px; color: var(--muted); flex-shrink: 0; }
-  .crop-zoom-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
-  .crop-zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; }
-  .crop-zoom-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
-  .crop-note { font-size: 11.5px; color: var(--muted); text-align: center; margin-bottom: 14px; }
-
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .spin { animation: spin 1s linear infinite; }
 </style>
@@ -917,21 +906,49 @@
 
   function compressImageFile(file) {
     return new Promise((resolve, reject) => {
+      // Prefer createImageBitmap with explicit EXIF orientation handling — plain
+      // new Image()+canvas can render phone photos sideways/upside-down on some
+      // browsers because the EXIF orientation tag isn't applied before drawing.
+      if (window.createImageBitmap) {
+        createImageBitmap(file, { imageOrientation: 'from-image' })
+          .then((bitmap) => {
+            try {
+              resolve(drawBitmapToCompressedDataUrl(bitmap, bitmap.width, bitmap.height));
+            } catch (err) { reject(err); }
+          })
+          .catch(() => compressImageFileLegacy(file).then(resolve, reject));
+      } else {
+        compressImageFileLegacy(file).then(resolve, reject);
+      }
+    });
+  }
+
+  function drawBitmapToCompressedDataUrl(source, srcW, srcH) {
+    const maxDim = 1000;
+    let w = srcW, h = srcH;
+    if (w > maxDim || h > maxDim) {
+      if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else { w = Math.round(w * maxDim / h); h = maxDim; }
+    }
+    // Guard against a 0px dimension on extreme aspect-ratio images, which would
+    // otherwise silently produce a broken/blank avatar.
+    w = Math.max(1, w); h = Math.max(1, h);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(source, 0, 0, w, h);
+    if (source.close) source.close();
+    return canvas.toDataURL('image/jpeg', 0.72);
+  }
+
+  function compressImageFileLegacy(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = function () {
         const img = new Image();
         img.onload = function () {
-          const maxDim = 1000;
-          let w = img.width, h = img.height;
-          if (w > maxDim || h > maxDim) {
-            if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
-            else { w = Math.round(w * maxDim / h); h = maxDim; }
-          }
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/jpeg', 0.72));
+          try { resolve(drawBitmapToCompressedDataUrl(img, img.width, img.height)); }
+          catch (err) { reject(err); }
         };
         img.onerror = reject;
         img.src = reader.result;
@@ -1172,9 +1189,11 @@
 
   // ---------- profile ----------
   let profileDraftAvatarUrl = '';
+  let profileAvatarChanged = false; // true only once a NEW file has been picked in this modal session
 
   function openProfileModal() {
     profileDraftAvatarUrl = profile.avatarUrl || '';
+    profileAvatarChanged = false;
     let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
     html += '<div class="modal-header"><span class="modal-title">Edit Profil</span><button class="close-btn" onclick="closeModal()">' + icon('x', 18) + '</button></div>';
     html += '<div id="profile-error"></div>';
@@ -1186,13 +1205,10 @@
     html += '</div>';
     html += '<div class="profile-field"><label>Nama</label><input type="text" id="profile-name" value="' + escapeHtml(profile.displayName || '') + '" placeholder="Nama anda" maxlength="60"></div>';
     html += '<div class="profile-field"><label>Bio</label><textarea id="profile-bio" placeholder="Sikit tentang anda...">' + escapeHtml(profile.bio || '') + '</textarea></div>';
-    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Batal</button><button type="button" class="btn btn-save" style="flex:1;" onclick="saveProfile()">' + icon('check', 15) + 'Simpan</button></div>';
+    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeModal()">Batal</button><button type="button" class="btn btn-save" id="profile-save-btn" style="flex:1;" onclick="saveProfile()">' + icon('check', 15) + 'Simpan</button></div>';
     html += '</div></div>';
     document.getElementById('modalRoot').innerHTML = html;
   }
-
-  // ---------- avatar crop (Twitter/Facebook-style circular crop) ----------
-  let cropState = null; // { img, scale, minScale, offsetX, offsetY, stageSize }
 
   async function handleAvatarFile(e) {
     const file = e.target.files && e.target.files[0];
@@ -1205,163 +1221,94 @@
       return;
     }
     try {
-      const dataUrl = await fileToDataUrl(file);
-      openCropModal(dataUrl);
+      profileDraftAvatarUrl = await compressImageFile(file);
+      profileAvatarChanged = true;
+      const preview = document.getElementById('profile-avatar-preview');
+      if (preview) {
+        preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
+      }
     } catch (err) {
       if (errEl) errEl.innerHTML = '<div class="error-banner">Tak dapat proses gambar ini.</div>';
     }
   }
 
-  function openCropModal(dataUrl) {
-    let html = '<div class="modal-overlay" onclick="closeCropModal(event)"><div class="modal" onclick="event.stopPropagation()">';
-    html += '<div class="modal-header"><span class="modal-title">Laraskan Gambar Profil</span><button class="close-btn" onclick="closeCropModal()">' + icon('x', 18) + '</button></div>';
-    html += '<div class="crop-stage" id="cropStage"><canvas id="cropCanvas" width="600" height="600"></canvas><div class="crop-stage-hint"></div></div>';
-    html += '<div class="crop-controls">';
-    html += '  <label>' + icon('image', 14) + '</label>';
-    html += '  <input type="range" class="crop-zoom-slider" id="cropZoomSlider" min="0" max="100" value="0" oninput="onCropZoomChange(this.value)">';
-    html += '</div>';
-    html += '<div class="crop-note">Seret untuk gerakkan &middot; gelangsar untuk zum</div>';
-    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeCropModal()">Batal</button><button type="button" class="btn btn-save" style="flex:1;" onclick="confirmCrop()">' + icon('check', 15) + 'Guna Gambar Ini</button></div>';
-    html += '</div></div>';
-    document.getElementById('modalRoot').innerHTML = html;
-
-    const img = new Image();
-    img.onload = () => {
-      const stageSize = 600; // canvas internal resolution; CSS scales it down visually
-      const minScale = Math.max(stageSize / img.width, stageSize / img.height);
-      cropState = {
-        img,
-        scale: minScale,
-        minScale,
-        maxScale: minScale * 4,
-        offsetX: 0, // pan offset in image pixels, relative to centered position
-        offsetY: 0,
-        stageSize
-      };
-      const slider = document.getElementById('cropZoomSlider');
-      if (slider) slider.value = 0;
-      drawCrop();
-      wireCropDrag();
-    };
-    img.src = dataUrl;
-  }
-
-  function drawCrop() {
-    if (!cropState) return;
-    const canvas = document.getElementById('cropCanvas');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const { img, scale, offsetX, offsetY, stageSize } = cropState;
-    const drawW = img.width * scale;
-    const drawH = img.height * scale;
-    // Image is centered in the stage, then panned by offsetX/offsetY (already scaled, in canvas px)
-    const drawX = (stageSize - drawW) / 2 + offsetX;
-    const drawY = (stageSize - drawH) / 2 + offsetY;
-    ctx.clearRect(0, 0, stageSize, stageSize);
-    ctx.drawImage(img, drawX, drawY, drawW, drawH);
-  }
-
-  function clampCropOffsets() {
-    if (!cropState) return;
-    const { img, scale, stageSize } = cropState;
-    const drawW = img.width * scale;
-    const drawH = img.height * scale;
-    // Maximum pan is however far the scaled image extends beyond the stage on each axis
-    const maxOffsetX = Math.max(0, (drawW - stageSize) / 2);
-    const maxOffsetY = Math.max(0, (drawH - stageSize) / 2);
-    cropState.offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, cropState.offsetX));
-    cropState.offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, cropState.offsetY));
-  }
-
-  function onCropZoomChange(sliderVal) {
-    if (!cropState) return;
-    const t = Number(sliderVal) / 100; // 0..1
-    cropState.scale = cropState.minScale + t * (cropState.maxScale - cropState.minScale);
-    clampCropOffsets();
-    drawCrop();
-  }
-
-  function wireCropDrag() {
-    const stage = document.getElementById('cropStage');
-    if (!stage) return;
-    let dragging = false;
-    let lastX = 0, lastY = 0;
-
-    function toCanvasScale(clientDx, clientDy) {
-      // Stage is displayed at CSS size but canvas internal resolution is cropState.stageSize;
-      // convert pointer movement in displayed pixels to canvas-space pixels.
-      const rect = stage.getBoundingClientRect();
-      const ratio = cropState.stageSize / rect.width;
-      return { dx: clientDx * ratio, dy: clientDy * ratio };
+  // Uploads the compressed avatar (a data: URL) to the Supabase Storage 'avatars'
+  // bucket and returns its public URL. Returns null on failure so the caller can
+  // show a real error instead of silently pretending the save worked.
+  //
+  // This replaces the previous approach of saving the entire base64 image
+  // straight into the profiles.avatar_url column — that's what caused the bug:
+  // the picture would crop/preview correctly on-screen (that part is pure CSS,
+  // object-fit: cover, and was never broken), but the large base64 payload
+  // could fail to save to the database (slow connections, payload size) and
+  // that failure was only logged to the console, never shown to the person —
+  // so the photo looked fine locally but didn't actually persist.
+  async function uploadAvatarToStorage(dataUrl) {
+    if (!supabaseClient || !currentUser) return null;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const path = currentUser.id + '/avatar.jpg';
+      const { error: upErr } = await supabaseClient.storage.from('avatars').upload(path, blob, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/jpeg'
+      });
+      if (upErr) { console.error('Gagal muat naik avatar', upErr); return null; }
+      const { data } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+      if (!data || !data.publicUrl) return null;
+      // Cache-bust: the path is always the same file, so force browsers/CDN to
+      // fetch the fresh version instead of showing a stale cached avatar.
+      return data.publicUrl + '?v=' + Date.now();
+    } catch (err) {
+      console.error('Gagal muat naik avatar', err);
+      return null;
     }
-
-    function start(x, y) {
-      dragging = true;
-      lastX = x; lastY = y;
-      stage.classList.add('dragging');
-    }
-    function move(x, y) {
-      if (!dragging || !cropState) return;
-      const { dx, dy } = toCanvasScale(x - lastX, y - lastY);
-      cropState.offsetX += dx;
-      cropState.offsetY += dy;
-      lastX = x; lastY = y;
-      clampCropOffsets();
-      drawCrop();
-    }
-    function end() {
-      dragging = false;
-      stage.classList.remove('dragging');
-    }
-
-    stage.onmousedown = (e) => start(e.clientX, e.clientY);
-    window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
-    window.addEventListener('mouseup', end);
-
-    stage.ontouchstart = (e) => { const t = e.touches[0]; start(t.clientX, t.clientY); };
-    stage.ontouchmove = (e) => { const t = e.touches[0]; move(t.clientX, t.clientY); e.preventDefault(); };
-    stage.ontouchend = end;
-  }
-
-  function confirmCrop() {
-    if (!cropState) return;
-    const { stageSize } = cropState;
-    // Export at a fixed, reasonable resolution for an avatar rather than the full stage canvas.
-    const outSize = 320;
-    const outCanvas = document.createElement('canvas');
-    outCanvas.width = outSize;
-    outCanvas.height = outSize;
-    const outCtx = outCanvas.getContext('2d');
-    // Circular clip so the exported PNG itself is a circle with transparent corners.
-    outCtx.save();
-    outCtx.beginPath();
-    outCtx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2);
-    outCtx.closePath();
-    outCtx.clip();
-    const sourceCanvas = document.getElementById('cropCanvas');
-    outCtx.drawImage(sourceCanvas, 0, 0, stageSize, stageSize, 0, 0, outSize, outSize);
-    outCtx.restore();
-
-    profileDraftAvatarUrl = outCanvas.toDataURL('image/png');
-    const preview = document.getElementById('profile-avatar-preview');
-    if (preview) {
-      preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
-    }
-    closeCropModal();
-  }
-
-  function closeCropModal(e) {
-    if (e) e.stopPropagation();
-    cropState = null;
-    document.getElementById('modalRoot').innerHTML = '';
   }
 
   async function saveProfile() {
     const name = (document.getElementById('profile-name').value || '').trim();
     const bio = (document.getElementById('profile-bio').value || '').trim();
-    profile = { displayName: name, bio: bio, avatarUrl: profileDraftAvatarUrl };
-    try { await storageSet('profile', JSON.stringify(profile)); } catch (e) {}
-    if (currentUser) await cloudSaveProfile(profile);
+    const errEl = document.getElementById('profile-error');
+    const saveBtn = document.getElementById('profile-save-btn');
+    if (errEl) errEl.innerHTML = '';
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = isSaving;
+      saveBtn.style.opacity = isSaving ? '0.6' : '1';
+      saveBtn.innerHTML = isSaving ? 'Menyimpan\u2026' : (icon('check', 15) + 'Simpan');
+    }
+
+    let avatarUrl = profileDraftAvatarUrl;
+
+    setSaving(true);
+
+    // Only touch Storage when a NEW photo was actually picked this session —
+    // if avatarUrl is unchanged (already a Storage URL from before, or empty),
+    // there's nothing to upload.
+    if (currentUser && profileAvatarChanged && avatarUrl && avatarUrl.indexOf('data:') === 0) {
+      const uploadedUrl = await uploadAvatarToStorage(avatarUrl);
+      if (uploadedUrl === null) {
+        setSaving(false);
+        if (errEl) errEl.innerHTML = '<div class="error-banner">Gagal muat naik gambar profil. Sila semak sambungan internet dan cuba lagi.</div>';
+        return; // stop here — do NOT close the modal or pretend this succeeded
+      }
+      avatarUrl = uploadedUrl;
+    }
+
+    const newProfile = { displayName: name, bio: bio, avatarUrl: avatarUrl };
+    try { await storageSet('profile', JSON.stringify(newProfile)); } catch (e) {}
+
+    if (currentUser) {
+      const ok = await cloudSaveProfile(newProfile);
+      if (!ok) {
+        setSaving(false);
+        if (errEl) errEl.innerHTML = '<div class="error-banner">Gagal simpan profil ke cloud. Sila cuba lagi.</div>';
+        return; // stop here too — surface the real failure instead of hiding it
+      }
+    }
+
+    profile = newProfile;
     closeModal();
     render();
   }
