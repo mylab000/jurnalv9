@@ -300,6 +300,17 @@
   .btn-cancel { flex: 1; background: transparent; border: 1px solid var(--border); border-radius: 9px; padding: 11px 8px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; }
   .btn-danger { background: var(--spend); color: #fff; }
 
+  .crop-stage { position: relative; width: 100%; max-width: 320px; aspect-ratio: 1; margin: 0 auto 18px; border-radius: 14px; overflow: hidden; background: #1a1a1a; touch-action: none; cursor: grab; }
+  .crop-stage.dragging { cursor: grabbing; }
+  .crop-stage canvas { display: block; width: 100%; height: 100%; }
+  .crop-stage-hint { position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 2000px rgba(0,0,0,0.5); pointer-events: none; margin: auto; width: 100%; height: 100%; }
+  .crop-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .crop-controls label { font-size: 12px; color: var(--muted); flex-shrink: 0; }
+  .crop-zoom-slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+  .crop-zoom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  .crop-zoom-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
+  .crop-note { font-size: 11.5px; color: var(--muted); text-align: center; margin-bottom: 14px; }
+
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .spin { animation: spin 1s linear infinite; }
 </style>
@@ -1180,6 +1191,9 @@
     document.getElementById('modalRoot').innerHTML = html;
   }
 
+  // ---------- avatar crop (Twitter/Facebook-style circular crop) ----------
+  let cropState = null; // { img, scale, minScale, offsetX, offsetY, stageSize }
+
   async function handleAvatarFile(e) {
     const file = e.target.files && e.target.files[0];
     e.target.value = '';
@@ -1191,14 +1205,155 @@
       return;
     }
     try {
-      profileDraftAvatarUrl = await compressImageFile(file);
-      const preview = document.getElementById('profile-avatar-preview');
-      if (preview) {
-        preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
-      }
+      const dataUrl = await fileToDataUrl(file);
+      openCropModal(dataUrl);
     } catch (err) {
       if (errEl) errEl.innerHTML = '<div class="error-banner">Tak dapat proses gambar ini.</div>';
     }
+  }
+
+  function openCropModal(dataUrl) {
+    let html = '<div class="modal-overlay" onclick="closeCropModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">Laraskan Gambar Profil</span><button class="close-btn" onclick="closeCropModal()">' + icon('x', 18) + '</button></div>';
+    html += '<div class="crop-stage" id="cropStage"><canvas id="cropCanvas" width="600" height="600"></canvas><div class="crop-stage-hint"></div></div>';
+    html += '<div class="crop-controls">';
+    html += '  <label>' + icon('image', 14) + '</label>';
+    html += '  <input type="range" class="crop-zoom-slider" id="cropZoomSlider" min="0" max="100" value="0" oninput="onCropZoomChange(this.value)">';
+    html += '</div>';
+    html += '<div class="crop-note">Seret untuk gerakkan &middot; gelangsar untuk zum</div>';
+    html += '<div class="modal-actions"><button type="button" class="btn-cancel" onclick="closeCropModal()">Batal</button><button type="button" class="btn btn-save" style="flex:1;" onclick="confirmCrop()">' + icon('check', 15) + 'Guna Gambar Ini</button></div>';
+    html += '</div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
+
+    const img = new Image();
+    img.onload = () => {
+      const stageSize = 600; // canvas internal resolution; CSS scales it down visually
+      const minScale = Math.max(stageSize / img.width, stageSize / img.height);
+      cropState = {
+        img,
+        scale: minScale,
+        minScale,
+        maxScale: minScale * 4,
+        offsetX: 0, // pan offset in image pixels, relative to centered position
+        offsetY: 0,
+        stageSize
+      };
+      const slider = document.getElementById('cropZoomSlider');
+      if (slider) slider.value = 0;
+      drawCrop();
+      wireCropDrag();
+    };
+    img.src = dataUrl;
+  }
+
+  function drawCrop() {
+    if (!cropState) return;
+    const canvas = document.getElementById('cropCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const { img, scale, offsetX, offsetY, stageSize } = cropState;
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+    // Image is centered in the stage, then panned by offsetX/offsetY (already scaled, in canvas px)
+    const drawX = (stageSize - drawW) / 2 + offsetX;
+    const drawY = (stageSize - drawH) / 2 + offsetY;
+    ctx.clearRect(0, 0, stageSize, stageSize);
+    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  }
+
+  function clampCropOffsets() {
+    if (!cropState) return;
+    const { img, scale, stageSize } = cropState;
+    const drawW = img.width * scale;
+    const drawH = img.height * scale;
+    // Maximum pan is however far the scaled image extends beyond the stage on each axis
+    const maxOffsetX = Math.max(0, (drawW - stageSize) / 2);
+    const maxOffsetY = Math.max(0, (drawH - stageSize) / 2);
+    cropState.offsetX = Math.max(-maxOffsetX, Math.min(maxOffsetX, cropState.offsetX));
+    cropState.offsetY = Math.max(-maxOffsetY, Math.min(maxOffsetY, cropState.offsetY));
+  }
+
+  function onCropZoomChange(sliderVal) {
+    if (!cropState) return;
+    const t = Number(sliderVal) / 100; // 0..1
+    cropState.scale = cropState.minScale + t * (cropState.maxScale - cropState.minScale);
+    clampCropOffsets();
+    drawCrop();
+  }
+
+  function wireCropDrag() {
+    const stage = document.getElementById('cropStage');
+    if (!stage) return;
+    let dragging = false;
+    let lastX = 0, lastY = 0;
+
+    function toCanvasScale(clientDx, clientDy) {
+      // Stage is displayed at CSS size but canvas internal resolution is cropState.stageSize;
+      // convert pointer movement in displayed pixels to canvas-space pixels.
+      const rect = stage.getBoundingClientRect();
+      const ratio = cropState.stageSize / rect.width;
+      return { dx: clientDx * ratio, dy: clientDy * ratio };
+    }
+
+    function start(x, y) {
+      dragging = true;
+      lastX = x; lastY = y;
+      stage.classList.add('dragging');
+    }
+    function move(x, y) {
+      if (!dragging || !cropState) return;
+      const { dx, dy } = toCanvasScale(x - lastX, y - lastY);
+      cropState.offsetX += dx;
+      cropState.offsetY += dy;
+      lastX = x; lastY = y;
+      clampCropOffsets();
+      drawCrop();
+    }
+    function end() {
+      dragging = false;
+      stage.classList.remove('dragging');
+    }
+
+    stage.onmousedown = (e) => start(e.clientX, e.clientY);
+    window.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+    window.addEventListener('mouseup', end);
+
+    stage.ontouchstart = (e) => { const t = e.touches[0]; start(t.clientX, t.clientY); };
+    stage.ontouchmove = (e) => { const t = e.touches[0]; move(t.clientX, t.clientY); e.preventDefault(); };
+    stage.ontouchend = end;
+  }
+
+  function confirmCrop() {
+    if (!cropState) return;
+    const { stageSize } = cropState;
+    // Export at a fixed, reasonable resolution for an avatar rather than the full stage canvas.
+    const outSize = 320;
+    const outCanvas = document.createElement('canvas');
+    outCanvas.width = outSize;
+    outCanvas.height = outSize;
+    const outCtx = outCanvas.getContext('2d');
+    // Circular clip so the exported PNG itself is a circle with transparent corners.
+    outCtx.save();
+    outCtx.beginPath();
+    outCtx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2);
+    outCtx.closePath();
+    outCtx.clip();
+    const sourceCanvas = document.getElementById('cropCanvas');
+    outCtx.drawImage(sourceCanvas, 0, 0, stageSize, stageSize, 0, 0, outSize, outSize);
+    outCtx.restore();
+
+    profileDraftAvatarUrl = outCanvas.toDataURL('image/png');
+    const preview = document.getElementById('profile-avatar-preview');
+    if (preview) {
+      preview.innerHTML = avatarHtml(profileDraftAvatarUrl, profile.displayName, 28) + '<span class="profile-edit-avatar-hint">Tukar foto</span><input type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)">';
+    }
+    closeCropModal();
+  }
+
+  function closeCropModal(e) {
+    if (e) e.stopPropagation();
+    cropState = null;
+    document.getElementById('modalRoot').innerHTML = '';
   }
 
   async function saveProfile() {
