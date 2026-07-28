@@ -117,8 +117,42 @@
   .app-name { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 20px; line-height: 1.1; }
   .app-tagline { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
   .header-right { display: flex; align-items: center; gap: 6px; }
-  .streak-badge { display: flex; align-items: center; gap: 5px; background: var(--panel); border-radius: 20px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; color: var(--coral-text);
+  .streak-badge { display: flex; align-items: center; gap: 5px; background: var(--panel); border-radius: 20px; padding: 6px 11px; font-size: 12.5px; font-weight: 600; color: var(--coral-text); border: none; cursor: pointer; font-family: 'Inter', sans-serif;
     box-shadow: 3px 3px 7px rgba(var(--shadow-d-rgb),0.25), -3px -3px 7px rgba(var(--shadow-l-rgb),0.7); }
+  .streak-badge:active { transform: scale(0.96); }
+
+  /* ---- streak modal ---- */
+  .streak-hero { text-align: center; padding: 6px 0 18px; }
+  .streak-hero-flame { display: inline-flex; align-items: center; justify-content: center; width: 74px; height: 74px; border-radius: 50%; background: var(--panel); color: var(--coral-text); margin-bottom: 8px;
+    box-shadow: 3px 3px 7px rgba(var(--shadow-d-rgb),0.25), -3px -3px 7px rgba(var(--shadow-l-rgb),0.7); }
+  .streak-hero-num { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 34px; line-height: 1.1; }
+  .streak-hero-label { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .streak-best { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .streak-progress-wrap { margin: 4px 0 18px; }
+  .streak-progress-track { height: 8px; border-radius: 6px; background: var(--panel); overflow: hidden; box-shadow: inset 2px 2px 4px rgba(var(--shadow-d-rgb),0.25); }
+  .streak-progress-fill { height: 100%; border-radius: 6px; background: var(--coral-text); transition: width 0.4s ease; }
+  .streak-progress-caption { font-size: 11.5px; color: var(--muted); margin-top: 6px; text-align: center; }
+  .streak-section-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 14.5px; margin: 18px 0 10px; }
+  .streak-badges-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; }
+  .streak-badge-card { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; border-radius: 12px; background: var(--panel);
+    box-shadow: 2px 2px 5px rgba(var(--shadow-d-rgb),0.2), -2px -2px 5px rgba(var(--shadow-l-rgb),0.6); }
+  .streak-badge-card.locked { opacity: 0.4; }
+  .streak-badge-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--coral-text); color: #fff; }
+  .streak-badge-card.locked .streak-badge-icon { background: var(--muted); }
+  .streak-badge-days { font-size: 11px; font-weight: 700; }
+  .streak-badge-label { font-size: 9.5px; color: var(--muted); text-align: center; line-height: 1.2; }
+  .freeze-panel { display: flex; align-items: center; gap: 12px; background: var(--panel); border-radius: 12px; padding: 12px 14px;
+    box-shadow: 2px 2px 5px rgba(var(--shadow-d-rgb),0.2), -2px -2px 5px rgba(var(--shadow-l-rgb),0.6); }
+  .freeze-icon { width: 38px; height: 38px; border-radius: 50%; background: #A8CFE0; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .freeze-title { font-size: 13px; font-weight: 700; }
+  .freeze-sub { font-size: 11px; color: var(--muted); margin-top: 1px; line-height: 1.35; }
+  .freeze-used-banner { display: flex; align-items: center; gap: 8px; background: #EAF3F8; color: #3E7590; border-radius: 10px; padding: 9px 12px; font-size: 12px; font-weight: 600; margin-bottom: 14px; }
+
+  .confetti-piece { position: fixed; top: -12px; width: 8px; height: 14px; z-index: 999; pointer-events: none; animation: confetti-fall linear forwards; }
+  @keyframes confetti-fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(540deg); opacity: 0.9; }
+  }
   .icon-toggle-btn { width: 34px; height: 34px; border-radius: 9px; background: var(--panel); border: none; color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     box-shadow: 3px 3px 7px rgba(var(--shadow-d-rgb),0.25), -3px -3px 7px rgba(var(--shadow-l-rgb),0.7); }
 
@@ -345,7 +379,7 @@
       </div>
       <div class="header-right">
         <div class="sync-badge" id="sync-badge" title="Status segerak"></div>
-        <div class="streak-badge" id="streak-badge"></div>
+        <button type="button" class="streak-badge" id="streak-badge" onclick="openStreakModal()"></button>
         <button class="icon-toggle-btn" id="backup-btn" onclick="openBackupModal()"></button>
         <div class="theme-dropdown-wrap" id="theme-dropdown-wrap">
           <button class="icon-toggle-btn" id="theme-toggle-btn" onclick="toggleThemeDropdown(event)" title="Warna tema"></button>
@@ -382,6 +416,9 @@
     palette: '<circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 22a10 10 0 1 1 8-16 5 5 0 0 1-5 5h-1a2 2 0 0 0-2 2 3 3 0 0 1-3 3c-1 0 1 3-1 3-2 0 4 3 4 3z"/>',
     playCircle: '<circle cx="12" cy="12" r="9"/><path d="M10 8.3l6.5 3.7-6.5 3.7V8.3z" fill="currentColor" stroke="none"/>',
     loader: '<circle cx="12" cy="12" r="9" stroke-dasharray="34 20" stroke-linecap="round"/>',
+    shield: '<path d="M12 2.5l7.5 3.4v5.4c0 5-3.2 8.7-7.5 10.2C7.7 20 4.5 16.3 4.5 11.3V5.9L12 2.5z"/><path d="M9 12l2 2 4-4.5"/>',
+    award: '<circle cx="12" cy="8.5" r="5.5"/><path d="M8.5 13l-1.7 7.5L12 18l5.2 2.5L15.5 13"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/>',
   };
   function icon(name, size, extraClass) {
     size = size || 16; extraClass = extraClass || '';
@@ -399,6 +436,20 @@
     const m = MOODS.find(x => x.key === key);
     return m ? m.color : '#E3DCC9';
   }
+
+  // ---------- streak gamification ----------
+  const MILESTONES = [
+    { days: 3, label: 'Mula Menyala' },
+    { days: 7, label: 'Seminggu Penuh' },
+    { days: 14, label: 'Dua Minggu' },
+    { days: 30, label: 'Sebulan' },
+    { days: 50, label: '50 Hari' },
+    { days: 100, label: 'Genap 100' },
+    { days: 200, label: '200 Hari' },
+    { days: 365, label: 'Setahun Penuh' },
+  ];
+  const MAX_STREAK_FREEZES = 3;
+  const CONFETTI_COLORS = ['#E3A6A0', '#F4C77A', '#A8CFC3', '#A9BFD9', '#C3AEE8'];
 
   function escapeHtml(str) {
     return String(str == null ? '' : str)
@@ -537,15 +588,24 @@
   }
 
   async function cloudLoadSettings() {
-    const fallback = { darkMode: false, colorTheme: 'default' };
+    const fallback = { darkMode: false, colorTheme: 'default', longestStreak: 0, streakFreezes: 1, freezeDates: [], seenMilestones: [] };
     if (!supabaseClient || !currentUser) return fallback;
     const { data, error } = await supabaseClient.from('journal_settings').select('*').eq('user_id', currentUser.id).maybeSingle();
     if (error || !data) return fallback;
-    return { darkMode: !!data.dark_mode, colorTheme: data.color_theme || 'default' };
+    return {
+      darkMode: !!data.dark_mode,
+      colorTheme: data.color_theme || 'default',
+      longestStreak: data.longest_streak || 0,
+      streakFreezes: (typeof data.streak_freezes === 'number') ? data.streak_freezes : 1,
+      freezeDates: Array.isArray(data.freeze_dates) ? data.freeze_dates : [],
+      seenMilestones: Array.isArray(data.seen_milestones) ? data.seen_milestones : [],
+    };
   }
 
   // ---------- state ----------
-  let state = { loaded: false, entries: [], darkMode: false };
+  let state = { loaded: false, entries: [], darkMode: false, longestStreak: 0, streakFreezes: 1, freezeDates: [], seenMilestones: [] };
+  let justUsedFreezeFor = null; // date string shown once in the modal after an auto-freeze kicks in
+  let pendingConfettiMilestone = null; // milestone reached this session, shown once badge/modal renders
   let currentMood = 'Biasa';
   let editingEntryId = null;
   let saveTimer = null;
@@ -565,9 +625,14 @@
         const cloudSettings = await cloudLoadSettings();
         state.darkMode = cloudSettings.darkMode;
         state.colorTheme = cloudSettings.colorTheme;
+        state.longestStreak = cloudSettings.longestStreak;
+        state.streakFreezes = cloudSettings.streakFreezes;
+        state.freezeDates = cloudSettings.freezeDates;
+        state.seenMilestones = cloudSettings.seenMilestones;
         syncStatus = 'synced';
       } else {
         syncStatus = 'error';
+        await loadStreakMeta(); // cloud fetch failed, fall back to this device's last cached copy
       }
     } else {
       try {
@@ -582,9 +647,103 @@
         if (p.status === 'fulfilled' && p.value) profile = JSON.parse(p.value.value);
       } catch (err) { /* no data yet */ }
       syncStatus = 'local';
+      await loadStreakMeta();
     }
+    maybeAutoApplyFreeze();
     state.loaded = true;
     render();
+  }
+  // Local cache of streak data - used directly when not logged in, and as an offline fallback
+  // for logged-in users if the Supabase fetch above fails. When logged in and online, the cloud
+  // copy (loaded via cloudLoadSettings) is the source of truth.
+  async function loadStreakMeta() {
+    try {
+      const raw = await storageGet('streakmeta');
+      if (raw && raw.value) {
+        const m = JSON.parse(raw.value);
+        state.longestStreak = m.longestStreak || 0;
+        state.streakFreezes = (typeof m.streakFreezes === 'number') ? m.streakFreezes : 1;
+        state.freezeDates = Array.isArray(m.freezeDates) ? m.freezeDates : [];
+        state.seenMilestones = Array.isArray(m.seenMilestones) ? m.seenMilestones : [];
+      }
+    } catch (e) { /* first run, keep defaults */ }
+  }
+  async function persistStreakMeta() {
+    try {
+      await storageSet('streakmeta', JSON.stringify({
+        longestStreak: state.longestStreak, streakFreezes: state.streakFreezes,
+        freezeDates: state.freezeDates, seenMilestones: state.seenMilestones
+      }));
+    } catch (e) { console.error('Gagal simpan data streak (lokal)', e); }
+    if (currentUser && supabaseClient) {
+      try {
+        await supabaseClient.from('journal_settings').upsert({
+          user_id: currentUser.id,
+          longest_streak: state.longestStreak,
+          streak_freezes: state.streakFreezes,
+          freeze_dates: state.freezeDates,
+          seen_milestones: state.seenMilestones,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      } catch (e) { console.error('Gagal simpan data streak (cloud)', e); }
+    }
+  }
+  // If the user missed exactly yesterday (but was mid-streak before that), automatically spend
+  // one Streak Freeze to keep the streak alive - mirrors familiar habit-app "streak freeze" mechanics.
+  function maybeAutoApplyFreeze() {
+    const datesSet = new Set(state.entries.map(e => e.date));
+    if (datesSet.has(todayStr())) return;
+    const yest = new Date(); yest.setDate(yest.getDate() - 1);
+    const yestStr = dateToLocalStr(yest);
+    if (datesSet.has(yestStr) || state.freezeDates.includes(yestStr)) return;
+    const before = new Date(); before.setDate(before.getDate() - 2);
+    const beforeStr = dateToLocalStr(before);
+    const hadActiveStreak = datesSet.has(beforeStr) || state.freezeDates.includes(beforeStr);
+    if (!hadActiveStreak || state.streakFreezes <= 0) return;
+    state.streakFreezes--;
+    state.freezeDates.push(yestStr);
+    justUsedFreezeFor = yestStr;
+    persistStreakMeta();
+  }
+  // Updates longest-streak record, checks for newly-crossed milestones (awarding a bonus freeze
+  // every 7 days, capped) and queues a confetti burst for the next render.
+  function updateStreakProgress(streak) {
+    let changed = false;
+    if (streak > state.longestStreak) { state.longestStreak = streak; changed = true; }
+    if (streak > 0 && streak % 7 === 0 && state.streakFreezes < MAX_STREAK_FREEZES) {
+      const key = 'freeze-award-' + streak;
+      if (!state.seenMilestones.includes(key)) {
+        state.seenMilestones.push(key);
+        state.streakFreezes++;
+        changed = true;
+      }
+    }
+    const hit = MILESTONES.find(m => m.days === streak);
+    if (hit && !state.seenMilestones.includes(streak)) {
+      state.seenMilestones.push(streak);
+      pendingConfettiMilestone = hit;
+      changed = true;
+    }
+    if (changed) persistStreakMeta();
+  }
+  function nextMilestone(streak) {
+    return MILESTONES.find(m => m.days > streak) || null;
+  }
+  function fireConfetti() {
+    const layer = document.createElement('div');
+    layer.style.position = 'fixed'; layer.style.inset = '0'; layer.style.zIndex = '999'; layer.style.pointerEvents = 'none';
+    document.body.appendChild(layer);
+    for (let i = 0; i < 46; i++) {
+      const p = document.createElement('div');
+      p.className = 'confetti-piece';
+      p.style.left = (Math.random() * 100) + 'vw';
+      p.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      p.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+      p.style.animationDelay = (Math.random() * 0.4) + 's';
+      p.style.borderRadius = (Math.random() > 0.5) ? '50%' : '2px';
+      layer.appendChild(p);
+    }
+    setTimeout(function () { layer.remove(); }, 3200);
   }
   async function persistEntries() {
     // Always keep a local copy too, so the app still works offline / as backup.
@@ -667,7 +826,7 @@
     let streak = 0;
     let cursor = new Date();
     if (!datesSet.has(todayStr())) cursor.setDate(cursor.getDate() - 1);
-    while (datesSet.has(dateToLocalStr(cursor))) {
+    while (datesSet.has(dateToLocalStr(cursor)) || state.freezeDates.includes(dateToLocalStr(cursor))) {
       streak++;
       cursor.setDate(cursor.getDate() - 1);
     }
@@ -691,7 +850,14 @@
       syncBadge.title = labels[syncStatus] || '';
     }
     const streak = computeStreak();
+    updateStreakProgress(streak);
     document.getElementById('streak-badge').innerHTML = icon('flame', 14) + streak + ' hari';
+    if (pendingConfettiMilestone) {
+      const m = pendingConfettiMilestone;
+      pendingConfettiMilestone = null;
+      fireConfetti();
+      setTimeout(function () { openStreakModal(m); }, 150);
+    }
 
     const root = document.getElementById('bodyRoot');
     root.innerHTML = renderMain();
@@ -1191,6 +1357,56 @@
     if (e) e.stopPropagation();
     editingEntryId = null;
     document.getElementById('modalRoot').innerHTML = '';
+  }
+
+  // ---------- streak modal ----------
+  function openStreakModal(justHitMilestone) {
+    const streak = computeStreak();
+    const next = nextMilestone(streak);
+    const prevThreshold = MILESTONES.slice().reverse().find(m => m.days <= streak);
+    const base = prevThreshold ? prevThreshold.days : 0;
+    const pct = next ? Math.round(((streak - base) / (next.days - base)) * 100) : 100;
+
+    let html = '<div class="modal-overlay" onclick="closeModal(event)"><div class="modal" onclick="event.stopPropagation()">';
+    html += '<div class="modal-header"><span class="modal-title">Streak Anda</span><button class="close-btn" onclick="closeModal()">' + icon('x', 18) + '</button></div>';
+
+    if (justHitMilestone) {
+      html += '<div class="freeze-used-banner">' + icon('award', 16) + ' Tahniah! Anda capai pencapaian "' + justHitMilestone.label + '" (' + justHitMilestone.days + ' hari).</div>';
+    } else if (justUsedFreezeFor) {
+      html += '<div class="freeze-used-banner">' + icon('shield', 16) + ' Pelindung Streak digunakan untuk ' + formatShortDate(justUsedFreezeFor) + ' \u2014 streak anda diselamatkan.</div>';
+      justUsedFreezeFor = null;
+    }
+
+    html += '<div class="streak-hero">';
+    html += '  <div class="streak-hero-flame">' + icon('flame', 34) + '</div>';
+    html += '  <div class="streak-hero-num">' + streak + '</div>';
+    html += '  <div class="streak-hero-label">hari berturut-turut</div>';
+    html += '  <div class="streak-best">Rekod terbaik: ' + Math.max(state.longestStreak, streak) + ' hari</div>';
+    html += '</div>';
+
+    html += '<div class="streak-progress-wrap">';
+    html += '  <div class="streak-progress-track"><div class="streak-progress-fill" style="width:' + pct + '%;"></div></div>';
+    html += '  <div class="streak-progress-caption">' + (next ? (next.days - streak) + ' hari lagi ke pencapaian "' + next.label + '"' : 'Semua pencapaian telah dibuka \u2014 legenda!') + '</div>';
+    html += '</div>';
+
+    html += '<div class="freeze-panel"><div class="freeze-icon">' + icon('shield', 19) + '</div><div>';
+    html += '  <div class="freeze-title">' + state.streakFreezes + ' Pelindung Streak</div>';
+    html += '  <div class="freeze-sub">Terlepas satu hari? Pelindung akan digunakan secara automatik supaya streak tidak putus. Dapat +1 pelindung setiap 7 hari streak (maks ' + MAX_STREAK_FREEZES + ').</div>';
+    html += '</div></div>';
+
+    html += '<div class="streak-section-title">Pencapaian</div><div class="streak-badges-grid">';
+    MILESTONES.forEach(function (m) {
+      const unlocked = streak >= m.days;
+      html += '<div class="streak-badge-card' + (unlocked ? '' : ' locked') + '">';
+      html += '  <div class="streak-badge-icon">' + icon(unlocked ? 'award' : 'lock', 16) + '</div>';
+      html += '  <div class="streak-badge-days">' + m.days + '</div>';
+      html += '  <div class="streak-badge-label">' + m.label + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+
+    html += '</div></div>';
+    document.getElementById('modalRoot').innerHTML = html;
   }
 
   // ---------- profile ----------
